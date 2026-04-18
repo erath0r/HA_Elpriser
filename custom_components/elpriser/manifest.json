@@ -2,9 +2,11 @@
   "domain": "elpriser",
   "name": "Elpriser",
   "codeowners": [],
+  "dependencies": [],
   "documentation": "https://github.com/erath0r/HA_Elpriser#readme",
-  "issue_tracker": "https://github.com/erath0r/HA_Elpriser/issues",
+  "integration_type": "service",
   "iot_class": "cloud_polling",
+  "issue_tracker": "https://github.com/erath0r/HA_Elpriser/issues",
   "loggers": ["custom_components.elpriser"],
   "requirements": [],
   "version": "0.1.0"
