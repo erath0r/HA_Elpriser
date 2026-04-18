@@ -168,6 +168,10 @@ Den bruger `custom:button-card` og viser:
 - `Næste 24 timer` som scrollbar liste
 - `Prognose næste 48 timer` som separat sektion
 
+Aktuelt eksempel fra dashboardet:
+
+![Mobil dashboard overview](docs/images/mobile-dashboard-overview.png)
+
 ## Stoettede budzoner
 
 Alle budzoner som Energy-Charts understoetter i `/price`, fx `DK1`, `DK2`, `DE-LU`, `SE4` og `NO2`.
