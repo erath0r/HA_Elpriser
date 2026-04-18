@@ -81,9 +81,9 @@ class ElpriserDataUpdateCoordinator(DataUpdateCoordinator[ElpriserData]):
             next_24[0] if next_24 else None,
         )
 
-        cheapest_hour = min(next_24, key=lambda point: point.price_eur_mwh, default=None)
+        cheapest_hour = min(next_24, key=lambda point: point.price_dkk_kwh, default=None)
         most_expensive_hour = max(
-            next_24, key=lambda point: point.price_eur_mwh, default=None
+            next_24, key=lambda point: point.price_dkk_kwh, default=None
         )
 
         forecast_hourly = self._build_hourly_forecast(
@@ -95,16 +95,16 @@ class ElpriserDataUpdateCoordinator(DataUpdateCoordinator[ElpriserData]):
         forecast_average_next_24h = (
             round(
                 statistics.fmean(
-                    point["price_eur_mwh"] for point in forecast_hourly[:24]
+                    point["price_dkk_kwh"] for point in forecast_hourly[:24]
                 ),
-                2,
+                3,
             )
             if forecast_hourly
             else None
         )
 
         return ElpriserData(
-            current_price=current_point.price_eur_mwh if current_point else None,
+            current_price=current_point.price_dkk_kwh if current_point else None,
             prices_next_24h=[point.as_dict() for point in next_24],
             cheapest_hour=cheapest_hour.as_dict() if cheapest_hour else None,
             most_expensive_hour=(
@@ -164,8 +164,8 @@ class ElpriserDataUpdateCoordinator(DataUpdateCoordinator[ElpriserData]):
         fallback: dict[int, list[float]] = defaultdict(list)
 
         for point in history_prices:
-            grouped[(point.start.weekday(), point.start.hour)].append(point.price_eur_mwh)
-            fallback[point.start.hour].append(point.price_eur_mwh)
+            grouped[(point.start.weekday(), point.start.hour)].append(point.price_dkk_kwh)
+            fallback[point.start.hour].append(point.price_dkk_kwh)
 
         forecast: list[dict[str, Any]] = []
         for offset in range(days * 24):
@@ -179,7 +179,7 @@ class ElpriserDataUpdateCoordinator(DataUpdateCoordinator[ElpriserData]):
             forecast.append(
                 {
                     "start": target.isoformat(),
-                    "price_eur_mwh": round(statistics.fmean(samples), 2),
+                    "price_dkk_kwh": round(statistics.fmean(samples), 3),
                     "source": "estimate",
                 }
             )
@@ -191,12 +191,12 @@ class ElpriserDataUpdateCoordinator(DataUpdateCoordinator[ElpriserData]):
         grouped: dict[str, list[float]] = defaultdict(list)
         for point in hourly_forecast:
             day_key = point["start"][:10]
-            grouped[day_key].append(point["price_eur_mwh"])
+            grouped[day_key].append(point["price_dkk_kwh"])
 
         return [
             {
                 "date": day_key,
-                "average_price_eur_mwh": round(statistics.fmean(values), 2),
+                "average_price_dkk_kwh": round(statistics.fmean(values), 3),
             }
             for day_key, values in sorted(grouped.items())
             if values

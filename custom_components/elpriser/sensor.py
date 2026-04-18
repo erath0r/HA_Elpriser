@@ -22,12 +22,14 @@ from .const import (
     ATTR_FORECAST_METHOD,
     ATTR_LAST_UPDATED,
     ATTR_MOST_EXPENSIVE_HOUR,
+    ATTR_PRICE_NOTE,
     ATTR_PRICES_NEXT_24H,
     ATTR_SOURCE,
     DEFAULT_BIDDING_ZONE,
     DEFAULT_FORECAST_DAYS,
     DOMAIN,
     NAME,
+    PRICE_UNIT,
 )
 from .coordinator import ElpriserDataUpdateCoordinator
 
@@ -82,7 +84,7 @@ class ElpriserBaseSensor(CoordinatorEntity[ElpriserDataUpdateCoordinator], Senso
     """Base sensor for Elpriser entities."""
 
     _attr_has_entity_name = True
-    _attr_native_unit_of_measurement = "EUR/MWh"
+    _attr_native_unit_of_measurement = PRICE_UNIT
     _attr_icon = "mdi:lightning-bolt"
 
     def __init__(
@@ -108,10 +110,12 @@ class ElpriserBaseSensor(CoordinatorEntity[ElpriserDataUpdateCoordinator], Senso
         if data is None:
             return {
                 ATTR_SOURCE: "https://api.energy-charts.info/price",
+                ATTR_PRICE_NOTE: "Priserne er omregnet fra EUR/MWh til DKK/kWh og er uden nettarif, afgifter og moms.",
             }
         return {
             ATTR_LAST_UPDATED: data.last_updated,
             ATTR_SOURCE: "https://api.energy-charts.info/price",
+            ATTR_PRICE_NOTE: "Priserne er omregnet fra EUR/MWh til DKK/kWh og er uden nettarif, afgifter og moms.",
         }
 
 

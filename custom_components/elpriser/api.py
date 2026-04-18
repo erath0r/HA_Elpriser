@@ -11,7 +11,7 @@ from typing import Any
 from aiohttp import ClientError, ClientSession
 from homeassistant.util import dt as dt_util
 
-from .const import API_BASE_URL
+from .const import API_BASE_URL, EUR_TO_DKK, MWH_TO_KWH
 
 
 class ElpriserApiError(Exception):
@@ -23,13 +23,13 @@ class PricePoint:
     """Normalized hourly price point."""
 
     start: datetime
-    price_eur_mwh: float
+    price_dkk_kwh: float
 
     def as_dict(self) -> dict[str, Any]:
         """Convert the point into a Home Assistant-friendly dict."""
         return {
             "start": self.start.isoformat(),
-            "price_eur_mwh": self.price_eur_mwh,
+            "price_dkk_kwh": self.price_dkk_kwh,
         }
 
 
@@ -85,11 +85,16 @@ class ElpriserApiClient:
             buckets[hour_start].append(float(price))
 
         points = [
-            PricePoint(start=hour_start, price_eur_mwh=round(statistics.fmean(values), 2))
+            PricePoint(
+                start=hour_start,
+                price_dkk_kwh=round(
+                    (statistics.fmean(values) * EUR_TO_DKK) / MWH_TO_KWH,
+                    3,
+                ),
+            )
             for hour_start, values in buckets.items()
             if values
         ]
         points.sort(key=lambda point: point.start)
 
         return [point for point in points if start <= point.start <= end]
-
