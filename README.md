@@ -153,6 +153,28 @@ series:
         });
 ```
 
+## Mobilvenligt Lovelace-kort
+
+Der ligger også en mere mobilvenlig visning inspireret af de viste referencebilleder. YAML-filen findes her:
+
+- `docs/lovelace/mobile_price_overview.yaml`
+
+Den bruger `custom:button-card` og viser:
+
+- `Lige nu`
+- `Laveste pris`
+- `Højeste pris`
+- `Gennemsnit`
+- `Næste 24 timer` som scrollbar liste
+- `Prognose næste 48 timer` som separat sektion
+
+Referencebillederne er lagt i repoet her:
+
+![Mobil reference 1](docs/images/reference-mobile-1.png)
+![Mobil reference 2](docs/images/reference-mobile-2.png)
+![Mobil reference 3](docs/images/reference-mobile-3.png)
+![Mobil reference 4](docs/images/reference-mobile-4.png)
+
 ## Stoettede budzoner
 
 Alle budzoner som Energy-Charts understoetter i `/price`, fx `DK1`, `DK2`, `DE-LU`, `SE4` og `NO2`.

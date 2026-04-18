@@ -1,0 +1,195 @@
+type: vertical-stack
+cards:
+  - type: custom:button-card
+    entity: sensor.nuvaerende_elpris
+    show_name: false
+    show_icon: false
+    show_state: false
+    triggers_update:
+      - sensor.nuvaerende_elpris
+    styles:
+      card:
+        - padding: 18px
+        - border-radius: 24px
+        - background: '#f4f5f2'
+        - color: '#222222'
+        - box-shadow: none
+      grid:
+        - grid-template-areas: '"header" "stats"'
+        - grid-template-columns: 1fr
+        - grid-template-rows: min-content min-content
+        - row-gap: 18px
+    custom_fields:
+      header: |
+        [[[
+          return `
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:0 4px;">
+              <div style="font-size:18px;font-weight:700;color:#1f2937;">Elpriser</div>
+              <div style="font-size:13px;color:#6b7280;font-weight:600;">Veksel / Langeland</div>
+            </div>
+          `;
+        ]]]
+      stats: |
+        [[[
+          const prices = entity?.attributes?.prices_next_24h || [];
+          const current = Number(entity?.state || 0);
+          const cheapest = entity?.attributes?.cheapest_hour?.price_dkk_kwh != null
+            ? Number(entity.attributes.cheapest_hour.price_dkk_kwh)
+            : null;
+          const highest = entity?.attributes?.most_expensive_hour?.price_dkk_kwh != null
+            ? Number(entity.attributes.most_expensive_hour.price_dkk_kwh)
+            : null;
+          const avg = prices.length
+            ? prices.reduce((sum, item) => sum + Number(item.price_dkk_kwh || 0), 0) / prices.length
+            : null;
+
+          const cheapestTime = entity?.attributes?.cheapest_hour?.start
+            ? new Date(entity.attributes.cheapest_hour.start).toLocaleString('da-DK', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' })
+            : '';
+          const highestTime = entity?.attributes?.most_expensive_hour?.start
+            ? new Date(entity.attributes.most_expensive_hour.start).toLocaleString('da-DK', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' })
+            : '';
+          const currentTime = new Date().toLocaleString('da-DK', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
+
+          const fmt = (value) => value !== null ? value.toFixed(2).replace('.', ',') + ' kr.' : '-';
+
+          const tile = (title, value, time, color) => `
+            <div style="background:#ffffff;border-radius:18px;padding:14px 16px;min-height:104px;box-sizing:border-box;">
+              <div style="font-size:14px;color:#4b5563;margin-bottom:6px;">${title}</div>
+              <div style="font-size:22px;line-height:1.1;font-weight:700;color:#1f2937;">${fmt(value)}</div>
+              <div style="font-size:12px;color:${color};margin-top:8px;">${time || '&nbsp;'}</div>
+            </div>
+          `;
+
+          return `
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+              ${tile('Lige nu', current, currentTime, '#2f855a')}
+              ${tile('Laveste pris', cheapest, cheapestTime, '#2f855a')}
+              ${tile('Højeste pris', highest, highestTime, '#8b5e57')}
+              ${tile('Gennemsnit', avg, 'Næste 24 timer', '#6b7280')}
+            </div>
+          `;
+        ]]]
+
+  - type: custom:button-card
+    entity: sensor.nuvaerende_elpris
+    show_name: false
+    show_icon: false
+    show_state: false
+    triggers_update:
+      - sensor.nuvaerende_elpris
+      - sensor.elpris_ugeprognose
+    styles:
+      card:
+        - padding: 0
+        - border-radius: 24px
+        - background: transparent
+        - box-shadow: none
+      grid:
+        - grid-template-areas: '"hours" "forecast"'
+        - grid-template-columns: 1fr
+        - grid-template-rows: min-content min-content
+        - row-gap: 18px
+    custom_fields:
+      hours: |
+        [[[
+          const prices = entity?.attributes?.prices_next_24h || [];
+          if (!prices.length) return '<div>Ingen priser endnu</div>';
+
+          const values = prices.map(item => Number(item.price_dkk_kwh || 0));
+          const max = Math.max(...values, 1);
+          const now = new Date();
+
+          const colorFor = (value) => {
+            const ratio = value / max;
+            if (ratio < 0.35) return '#16a34a';
+            if (ratio < 0.55) return '#2f855a';
+            if (ratio < 0.75) return '#556b4d';
+            if (ratio < 0.9) return '#6f6258';
+            return '#8b5e57';
+          };
+
+          let lastDate = '';
+          const rows = prices.map((item) => {
+            const dt = new Date(item.start);
+            const hour = dt.toLocaleTimeString('da-DK', { hour:'2-digit', minute:'2-digit' });
+            const dateLabel = dt.toLocaleDateString('da-DK', { weekday:'long', day:'numeric', month:'numeric' });
+            const value = Number(item.price_dkk_kwh || 0);
+            const width = Math.max(8, Math.round((value / max) * 100));
+            const isCurrentHour =
+              dt.getFullYear() === now.getFullYear() &&
+              dt.getMonth() === now.getMonth() &&
+              dt.getDate() === now.getDate() &&
+              dt.getHours() === now.getHours();
+
+            const showDate = dateLabel !== lastDate;
+            lastDate = dateLabel;
+
+            return `
+              ${showDate ? `<div style="margin:14px 0 6px 0;font-size:15px;font-weight:700;color:#374151;text-transform:lowercase;">${dateLabel}</div>` : ''}
+              <div style="display:grid;grid-template-columns:56px 72px 1fr;align-items:center;gap:10px;margin:6px 0;">
+                <div style="font-size:15px;font-weight:${isCurrentHour ? '700' : '600'};color:#374151;">${hour}</div>
+                <div style="font-size:15px;color:#374151;font-weight:${isCurrentHour ? '700' : '500'};">${value.toFixed(2).replace('.', ',')}</div>
+                <div style="position:relative;height:14px;background:#e5e7eb;border-radius:999px;overflow:hidden;${isCurrentHour ? 'outline:2px solid #374151;' : ''}">
+                  <div style="width:${width}%;height:100%;border-radius:999px;background:${colorFor(value)};"></div>
+                </div>
+              </div>
+            `;
+          }).join('');
+
+          return `
+            <div style="background:#ffffff;border-radius:20px;padding:14px 14px 10px 14px;">
+              <div style="font-size:17px;font-weight:700;color:#1f2937;margin-bottom:8px;">Næste 24 timer</div>
+              <div style="max-height:460px;overflow-y:auto;padding-right:4px;">${rows}</div>
+            </div>
+          `;
+        ]]]
+      forecast: |
+        [[[
+          const forecastEntity = hass.states['sensor.elpris_ugeprognose'];
+          const forecast = forecastEntity?.attributes?.forecast_hourly || [];
+          if (!forecast.length) return '';
+
+          const limited = forecast.slice(0, 48);
+          const values = limited.map(item => Number(item.price_dkk_kwh || 0));
+          const max = Math.max(...values, 1);
+
+          const colorFor = (value) => {
+            const ratio = value / max;
+            if (ratio < 0.35) return '#f59e0b';
+            if (ratio < 0.55) return '#d97706';
+            if (ratio < 0.75) return '#c26b2c';
+            if (ratio < 0.9) return '#b55d33';
+            return '#9a4d3a';
+          };
+
+          let lastDate = '';
+          const rows = limited.map((item) => {
+            const dt = new Date(item.start);
+            const hour = dt.toLocaleTimeString('da-DK', { hour:'2-digit', minute:'2-digit' });
+            const dateLabel = dt.toLocaleDateString('da-DK', { weekday:'long', day:'numeric', month:'numeric' });
+            const value = Number(item.price_dkk_kwh || 0);
+            const width = Math.max(8, Math.round((value / max) * 100));
+
+            const showDate = dateLabel !== lastDate;
+            lastDate = dateLabel;
+
+            return `
+              ${showDate ? `<div style="margin:14px 0 6px 0;font-size:15px;font-weight:700;color:#7c2d12;text-transform:lowercase;">${dateLabel}</div>` : ''}
+              <div style="display:grid;grid-template-columns:56px 72px 1fr;align-items:center;gap:10px;margin:6px 0;">
+                <div style="font-size:15px;font-weight:600;color:#7c2d12;">${hour}</div>
+                <div style="font-size:15px;color:#7c2d12;font-weight:500;">${value.toFixed(2).replace('.', ',')}</div>
+                <div style="position:relative;height:14px;background:#f3f4f6;border-radius:999px;overflow:hidden;">
+                  <div style="width:${width}%;height:100%;border-radius:999px;background:${colorFor(value)};"></div>
+                </div>
+              </div>
+            `;
+          }).join('');
+
+          return `
+            <div style="background:#fff7ed;border-radius:20px;padding:14px 14px 10px 14px;">
+              <div style="font-size:17px;font-weight:700;color:#9a3412;margin-bottom:8px;">Prognose næste 48 timer</div>
+              <div style="max-height:420px;overflow-y:auto;padding-right:4px;">${rows}</div>
+            </div>
+          `;
+        ]]]
