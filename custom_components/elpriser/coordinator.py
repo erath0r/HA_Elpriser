@@ -88,7 +88,7 @@ class ElpriserDataUpdateCoordinator(DataUpdateCoordinator[ElpriserData]):
 
         forecast_hourly = self._build_hourly_forecast(
             history_prices=history_prices,
-            start=(future_actual[-1].start + timedelta(hours=1)) if future_actual else current_hour,
+            start=current_hour,
             days=self.forecast_days,
         )
         forecast_daily = self._build_daily_forecast(forecast_hourly)
