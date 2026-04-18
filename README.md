@@ -63,60 +63,95 @@ Det pæneste resultat faar du med `ApexCharts Card`, som kan installeres via HAC
 
 - <https://github.com/RomRider/apexcharts-card>
 
-Naar kortet er installeret, kan du bruge dette eksempel i et manuelt dashboard-kort:
+Naar kortet er installeret, kan du bruge dette eksempel i et manuelt dashboard-kort. Det viser kendte priser i groent, prognoser i orange og viser vaerdierne i `oere/kWh`:
 
 ```yaml
 type: custom:apexcharts-card
-graph_span: 48h
+graph_span: 168h
 span:
   start: hour
 header:
   show: true
-  title: Elpriser
+  title: Elpriser pr. time
   show_states: true
   colorize_states: true
 now:
   show: true
-  color: '#d97706'
+  color: '#b45309'
 apex_config:
   chart:
-    height: 320
+    height: 650
+    zoom:
+      enabled: true
+    toolbar:
+      show: true
+      tools:
+        zoom: true
+        zoomin: true
+        zoomout: true
+        pan: true
+        reset: true
   legend:
     show: true
+    position: top
+  plotOptions:
+    bar:
+      columnWidth: 75%
   stroke:
-    width: 3
-  fill:
-    type: gradient
-    gradient:
-      shadeIntensity: 0.25
-      opacityFrom: 0.45
-      opacityTo: 0.05
+    width: 0
+  grid:
+    padding:
+      bottom: 30
   xaxis:
+    type: datetime
     labels:
       datetimeUTC: false
+      datetimeFormatter:
+        year: 'dd MMM yyyy'
+        month: 'dd MMM'
+        day: 'dd MMM'
+        hour: 'HH:mm'
+      style:
+        fontSize: 12px
+    axisBorder:
+      show: true
+    axisTicks:
+      show: true
   yaxis:
-    decimalsInFloat: 2
+    decimalsInFloat: 0
+    title:
+      text: 'oere/kWh'
 series:
-  - entity: sensor.elpriser_nuvaerende_elpris
-    name: Naeste 24 timer
+  - entity: sensor.nuvaerende_elpris
+    name: Kendte priser
     type: column
-    color: '#0f766e'
+    color: '#16a34a'
+    unit: oere/kWh
+    float_precision: 1
     data_generator: |
       return (entity.attributes.prices_next_24h || []).map((item) => {
-        return [new Date(item.start).getTime(), item.price_dkk_kwh];
+        return [new Date(item.start).getTime(), item.price_dkk_kwh * 100];
       });
-  - entity: sensor.elpriser_elpris_ugeprognose
-    name: Prognose
-    type: line
-    curve: smooth
-    color: '#dc2626'
-    data_generator: |
-      return (entity.attributes.forecast_hourly || []).slice(0, 24).map((item) => {
-        return [new Date(item.start).getTime(), item.price_dkk_kwh];
-      });
-```
 
-Det giver soejler for de kendte timer og en roed, glat prognoselinje ovenpaa.
+  - entity: sensor.elpris_ugeprognose
+    name: Prognose
+    type: column
+    color: '#f59e0b'
+    unit: oere/kWh
+    float_precision: 1
+    data_generator: |
+      const known = new Set(
+        (hass.states['sensor.nuvaerende_elpris']?.attributes?.prices_next_24h || [])
+          .map((item) => new Date(item.start).getTime())
+      );
+
+      return (entity.attributes.forecast_hourly || [])
+        .slice(0, 168)
+        .filter((item) => !known.has(new Date(item.start).getTime()))
+        .map((item) => {
+          return [new Date(item.start).getTime(), item.price_dkk_kwh * 100];
+        });
+```
 
 ## Stoettede budzoner
 
