@@ -150,7 +150,17 @@ cards:
           const forecast = forecastEntity?.attributes?.forecast_hourly || [];
           if (!forecast.length) return '';
 
-          const limited = forecast.slice(0, 48);
+          const known = new Set(
+            (entity?.attributes?.prices_next_24h || [])
+              .map((item) => new Date(item.start).getTime())
+          );
+
+          const limited = forecast
+            .filter((item) => !known.has(new Date(item.start).getTime()))
+            .slice(0, 48);
+
+          if (!limited.length) return '';
+
           const values = limited.map(item => Number(item.price_dkk_kwh || 0));
           const max = Math.max(...values, 1);
 
